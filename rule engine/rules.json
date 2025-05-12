@@ -1,0 +1,33 @@
+[
+  {
+    "rule_name": "Move big PDFs",
+    "conditions": {
+      "type": "pdf",
+      "size_greater_than_mb": 0.2
+    },
+    "action": {
+      "move_to": "C:\\Users\\karth\\OneDrive\\Desktop\\Documents\\BigPDF"
+    }
+  },
+  {
+    "rule_name": "Move text files",
+    "conditions": {
+      "type": "txt",
+      "size_greater_than_mb": 0.01
+    },
+    "action": {
+      "move_to": "Documents/TextFiles"
+    }
+  }, 
+
+  {
+    "rule_name":"Move docx files", 
+    "conditions":{
+      "type":"docx",
+      "size_greater_than_mb":""
+    }, 
+    "action":{
+      "move_to":""
+    }
+  }
+]
