@@ -1,44 +1,90 @@
 import os
 import json
 import shutil
+import logging
 
-def load_rules(filename="rules.json"):
-    with open(filename, "r") as f:
-        return json.load(f)
+# Configure logger
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
-def match_conditions(file_path, conditions):
-    if conditions.get("type") and not file_path.endswith(f".{conditions['type']}"):
-        return False
-    if conditions.get("size_greater_than_mb"):
-        size_in_bytes = os.path.getsize(file_path)
-        if size_in_bytes <= conditions["size_greater_than_mb"] * 1024 * 1024:
+class Engine:
+    def __init__(self, rules_file="rules.json"):
+        self.rules = self.load_rules(rules_file)
+
+    def load_rules(self, filename):
+        with open(filename, "r") as f:
+            return json.load(f)
+
+    def match_conditions(self, file_path, conditions):
+        file_type = conditions.get("type")
+        min_size_mb = float(conditions.get("size_greater_than_mb", 0))
+
+        if file_type and not file_path.lower().endswith(f".{file_type.lower()}"):
             return False
-    return True
 
-def perform_action(file_path, action):
-    dest_dir = action.get("move_to")
-    if dest_dir:
+        size_in_bytes = os.path.getsize(file_path)
+        if size_in_bytes <= min_size_mb * 1024 * 1024:
+            return False
+
+        return True
+
+    def perform_action(self, file_path, action):
+        dest_dir = action.get("move_to") or action.get("copy_to")
+
+        if not dest_dir:
+            logger.warning(f"No destination specified for action on: {file_path}")
+            return
+
         os.makedirs(dest_dir, exist_ok=True)
-        shutil.move(file_path, os.path.join(dest_dir, os.path.basename(file_path)))
-        print(f"Moved {file_path} to {dest_dir}")
+        destination = os.path.join(dest_dir, os.path.basename(file_path))
 
-def apply_rule_to_file(file_path, rule_name):
-    rules = load_rules()
-    rule = next((r for r in rules if r["rule_name"] == rule_name), None)
-    if not rule:
-        print(f"No rule found with name: {rule_name}")
-        return
+        if action.get("move_to"):
+            shutil.move(file_path, destination)
+            logger.info(f"Moved: {file_path} -> {destination}")
+        elif action.get("copy_to"):
+            shutil.copy(file_path, destination)
+            logger.info(f"Copied: {file_path} -> {destination}")
 
-    if os.path.isfile(file_path) and match_conditions(file_path, rule["conditions"]):
-        print(f"Rule matched: {rule_name} -> {file_path}")
-        perform_action(file_path, rule["action"])
-    else:
-        print(f"Rule did not match or file not found.")
+    def apply_rule_to_file(self, file_path, rule_name):
+        rule = next((r for r in self.rules if r["rule_name"] == rule_name), None)
+        if not rule:
+            logger.warning(f"No rule found with name: {rule_name}")
+            return
+
+        if not os.path.isfile(file_path):
+            logger.warning(f"Not a valid file: {file_path}")
+            return
+
+        if self.match_conditions(file_path, rule["conditions"]):
+            logger.info(f"Rule matched: {rule_name} for file {file_path}")
+            self.perform_action(file_path, rule["action"])
+        else:
+            logger.info(f"Rule did not match: {rule_name} for file {file_path}")
+
+    def apply_rule_to_folder(self, folder_path, rule_name):
+        if not os.path.isdir(folder_path):
+            logger.warning(f"Invalid folder path: {folder_path}")
+            return
+
+        for entry in os.listdir(folder_path):
+            full_path = os.path.join(folder_path, entry)
+            if os.path.isfile(full_path):
+                self.apply_rule_to_file(full_path, rule_name)
+
 
 if __name__ == "__main__":
-    user_input = input("Enter the file path and rule name (comma-separated): ")
+    user_input = input("Enter the folder/file path and rule name (comma-separated): ")
     try:
-        file_path, rule_name = [x.strip() for x in user_input.split(",", 1)]
-        apply_rule_to_file(file_path, rule_name)
+        path, rule_name = [x.strip() for x in user_input.split(",", 1)]
+        engine = Engine()
+
+        if os.path.isdir(path):
+            engine.apply_rule_to_folder(path, rule_name)
+        elif os.path.isfile(path):
+            engine.apply_rule_to_file(path, rule_name)
+        else:
+            logger.warning("Provided path is neither a valid file nor a folder.")
     except ValueError:
-        print("Invalid input format. Please enter: <file_path>, <rule_name>")
+        logger.error("Invalid input format. Please enter: <path>, <rule_name>")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")

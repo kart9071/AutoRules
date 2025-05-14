@@ -1,6 +1,7 @@
 [
   {
     "rule_name": "Move big PDFs",
+    "need_file":true,
     "conditions": {
       "type": "pdf",
       "size_greater_than_mb": 0.2
@@ -11,9 +12,10 @@
   },
   {
     "rule_name": "Move text files",
+    "need_file":true,
     "conditions": {
       "type": "txt",
-      "size_greater_than_mb": 0.01
+      "size_greater_than_mb": 0.2
     },
     "action": {
       "move_to": "Documents/TextFiles"
@@ -22,12 +24,36 @@
 
   {
     "rule_name":"Move docx files", 
+    "need_file":true,
     "conditions":{
       "type":"docx",
-      "size_greater_than_mb":""
+      "size_greater_than_mb":0.2
     }, 
     "action":{
-      "move_to":""
+      "move_to":"C:\\Users\\karth\\OneDrive\\Desktop\\Documents\\BigPDF"
+    }
+  }, 
+
+  {
+    "rule_name":"copy docx file", 
+    "need_file":true,
+    "conditions":{
+      "type":"docx",
+      "size_greater_than_mb":0.2
+    }, 
+    "action":{
+      "copy_to":"C:\\Users\\karth\\OneDrive\\Desktop\\Documents\\BigPDF"
+    }
+  },
+  {
+    "rule_name":"copy pdf file",
+    "need_file":true,
+    "conditions":{
+      "type":"pdf",
+      "size_greater_than_mb":0.2
+    },
+    "action":{
+      "copy_to":"C:\\Users\\karth\\OneDrive\\Desktop\\Documents\\BigPDF"
     }
   }
 ]

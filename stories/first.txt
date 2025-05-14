@@ -1,0 +1,15 @@
+create as rules as possible 
+
+                        rules   
+                          |
+                          |
+
+                    if rules passes 
+                    /             \
+                                
+    action should be performed    action should not be performed
+
+
+
+
+                    
